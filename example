@@ -1,0 +1,271 @@
+#include "dir.h"
+inherit "obj/monster";
+string a_chat_str;
+int elavat;
+int c,fury;
+
+reset(arg) {
+    ::reset(arg);
+    if (arg)
+        return;
+    if(!a_chat_str) {
+	a_chat_str = allocate(4);
+	a_chat_str[0] = "Wrang D'Xar yells: 'Who the hell are you!?'\n";
+  a_chat_str[1] = "Wrang D'Xar screams: 'Go away!'\n";
+  a_chat_str[2] = "Wrang D'Xar shouts: 'PERISH, INTRUDER!'\n";
+	a_chat_str[3] = "Wrang D'Xar booms: 'Leave while you can!\n";
+	}
+    load_a_chat(20,a_chat_str);
+    set_skill("dodge to 150");
+    set_name("Wrang D'Xar");
+    set_alias("wrang d'xar");
+    set_alt_name("wrang");
+    set_level(100);
+//    set_exp(1223445);
+//    set_max_hp(150000);
+    set_hp(150000);
+    set_short("Wrang D'Xar the Renegade Ninja");
+    set_long("An old man, wearing faded black overalls. A ragged silk cloak covers his shoulders.\n"+
+	     "His face is barely visible under a hood, it is marked with pocks and lines as though\n"+
+	     "he has seen everything and is weary of it all. Although he looks weary, his eyes burn\n"+
+	     "with some inner fire.");
+    set_aggressive(1);
+    move_object(clone_object(dir+"spear"),this_object());
+    init_command("wield spear");
+}
+
+heart_beat() {
+::heart_beat();
+test_living();
+if(this_object()->query_hp() < 30000) {
+	c=c+random(8);
+	if(random(10) == 0) tell_room(environment(this_object()),"Wrang D'Xar curses loudly.\n");
+	if(random(5) == 1) yksiputosi();
+	}
+if(random(3) == 0) c=c+1+random(3);
+if(random(100) < 8) c=100;
+++c;
+if(random(10) == 5) yksiputosi();
+if(c >= 15 && this_object()->query_attacker_ob() && this_object()->query_paralyzed() == 0 &&
+   present(this_object()->query_attacker_ob(),environment(this_object()))) {
+	act();
+	if(random(100) < 33) act();
+        if(random(100) < 5) act();
+	c=0;
+	fury=0;
+	}
+//tell_room(environment(this_object()),c+"\n");
+}
+
+
+yksiputosi() {
+object hep = all_inventory(environment(this_object()));
+int a=0;
+elavat=0;
+while(a<sizeof(hep)) {
+	if(living(hep[a]) && hep[a]->query_name() != "Wrang D'Xar")
+		elavat++;
+	a++;
+	}
+if(elavat < 2) return 1;
+a=0;
+int i=0;
+int poks=random(elavat);
+while(a<sizeof(hep)) {
+	if(living(hep[a])) {
+		if(i==poks && hep[a]->query_name() != "Wrang D'Xar") {
+			if(random(650) < hep[a]->query_dex()) {
+				say("Wrang D'Xar tries to push "+hep[a]->query_name()+" down from the tree, but "+
+					hep[a]->query_pronoun()+" dodges!\n",hep[a]);
+				tell_object(hep[a],"Tries to push you down but you dodge!\n");
+				say("Wrang D'Xar trips and falls flat on his face.\n");
+				this_object()->paralyze(10);
+				return 1;
+				}
+			tell_object(hep[a],"Wrang D'Xar pushes you down from the tree.\n");
+			say("Wrang D'Xar pushes "+hep[a]->query_name()+" down from the tree.\n",hep[a]);
+			tell_room(dir+"e3",hep[a]->query_name()+" falls from the tree, SPLAT!\n");
+			move_object(hep[a],dir+"e3");
+			hep[a]->break_skill();
+			if(hep[a]->using_skill()) tell_object(hep[a],"You break your skill attempt.\n");
+			hep[a]->harm_player((random(251)+250));
+			a=sizeof(hep);
+			}
+		}
+	i++;
+	a++;
+	}
+return 1;
+}
+
+act() {
+object ao = this_object()->query_attacker_ob();
+if(ao->query_ghost() == 1) return 1;
+if(dodge_check(ao,50) == 1) return 1;
+int t = random(100);
+switch(t){
+ case 0 .. 25:
+  tell_object(ao,"Wrang D'Xar kicks you in the head!\n");
+  say("Wrang D'Xar kicks "+ao->query_name()+" in the head!\n",ao);
+  ao->hit_player(200+random(101));
+  if(random(100) < 10) ao->paralyze((1+random(3)));
+  if(random(100) < 33) {
+	if(ao->using_skill()) tell_object(ao,"You break your skill attempt.\n");
+	ao->break_skill();
+	}
+  break;
+ case 26 .. 45:
+  tell_object(ao,"You feel a sharp pain in your stomach as Wrang D'Xar thrusts you with his spear!\n");
+  say(ao->query_name()+" gasps in pain as Wrang D'Xar thrusts his spear into "+ao->query_name()+"'s stomach!\n",ao);
+  ao->hit_player(300+random(301));
+  if(random(100) < 5) ao->paralyze(10);
+  break;
+ case 46 .. 75:
+  tell_object(ao,"Wrang D'Xar whacks you in the arm with his spear!\n");
+  say("Wrang D'Xar whacks "+ao->query_name()+" in the arm with his spear!\n",ao);
+  ao->hit_player(50+random(101));
+  if(random(100) < 50) {
+	if(ao->using_skill()) tell_object(ao,"You break your skill attempt.\n");
+	ao->break_skill();
+	}
+  break;
+ case 76 .. 88:
+  tell_object(ao,"You trip and fall on your back as Wrang D'Xar pushes you with his spear.\n");
+  say(ao->query_name()+" falls on "+ao->query_possessive()+" backside as Wrang D'Xar pushes "+
+	ao->query_objective()+" with his spear.\n",ao);
+  ao->hit_player(100+random(101));
+  if(ao->using_skill()) tell_object(ao,"You break your skill attempt.\n");
+  ao->break_skill();
+  break;
+ case 89 .. 99:
+  if(fury==0) {
+	  tell_object(ao,"Wrang D'Xar bellows in rage and executes a furious series of blows at you!\n");
+	  say(ao->query_name()+ " eyes widen in horror as Wrang D'Xar screams in rage and executes a furious series of blows "+
+		"with his spear!\n",ao);
+	  haq(ao);
+	  fury=1;
+	}
+  break;
+ default:
+  break;
+  }
+return 1;
+}
+
+haq(object h) {
+object tp=h;
+int o = random(4)+3;
+int p = 0;
+while(p<o) {
+	haqhaq(tp);
+	p++;
+	}
+return 1;
+}
+
+haqhaq(object ee) {
+object h=ee;
+if(dodge_check(h,200) == 1) return 1;
+if(!present(h,environment(this_object()))) return 1;
+if(h->query_ghost() == 1) return 1;
+string how,where;
+int m,mm;
+switch(random(5)) {
+ case 0:
+  how="slams";
+  m=1;
+  break;
+ case 1:
+  how="whacks";
+  m=2;
+  break;
+ case 2:
+  how="taps";
+  m=3;
+  break;
+ case 3:
+  how="raps";
+  m=4;
+  break;
+ case 4:
+  how="clouts";
+  m=5;
+  break;
+  }
+switch(random(5)) {
+ case 0:
+  where="head";
+  mm=5;
+  break;
+ case 1:
+  where="torso";
+  mm=1;
+  break;
+ case 2:
+  where="groin";
+  mm=4;
+  break;
+ case 3:
+  where="arm";
+  mm=3;
+  break;
+ case 4:
+  where="leg";
+  mm=2;
+  break;
+  }
+tell_object(h,"Wrang D'Xar "+how+" you in the "+where+" with his spear!\n");
+h->hit_player(m*mm*random(30));
+return 1;
+}
+
+dodge_check(object tp,int poop) {
+if(tp->query_paralyzed() == 1) return 0;
+int d = tp->query_skill("dodge");
+if(d > 0) {
+	if(random(200)+poop < d) {
+		tell_object(tp,"You manage to dodge Wrang D'Xar's attack.\n");
+		return 1;
+		}
+	}
+return 0;
+}
+
+test_living() {
+object hep = all_inventory(environment(this_object()));
+int r=0;
+if(sizeof(hep) < 3) {
+if(living(hep[0]) && hep[0]->query_ghost() == 1) {
+		shout("Wrang D'Xar shouts 'BRING IT ON!' and kicks "+
+			hep[0]->query_name()+" down from the tree.\n");
+		tell_object(hep[0],"Wrang D'Xar kicks you down from the tree.\n");
+		move_object(hep[0],dir+"e3");
+		hep[0]->look();
+		return 1;
+	}
+if(living(hep[1]) && hep[1]->query_ghost() == 1) {
+		shout("Wrang D'Xar shouts 'BRING IT ON!' and kicks "+
+			hep[1]->query_name()+" down from the tree.\n");
+		tell_object(hep[1],"Wrang D'Xar kicks you down from the tree.\n");
+		move_object(hep[1],dir+"e3");
+		hep[1]->look();
+		return 1;
+	}
+	}
+if(sizeof(hep) > 2)
+while(r<sizeof(hep)) {
+	if(living(hep[r]) && hep[r]->query_ghost() == 1) {
+		shout("Wrang D'Xar shouts 'BRING IT ON!' and kicks "+
+			hep[r]->query_name()+" down from the tree.\n");
+		tell_object(hep[r],"Wrang D'Xar kicks you down from the tree.\n");
+		move_object(hep[r],dir+"e3");
+		hep[r]->look();
+		}
+	r++;
+	}
+return 1;
+}
+
+second_life() {
+	shout("Wrang D'Xar lets out a final bloodcurdling scream and falls down, lifeless.\n");
+	}
